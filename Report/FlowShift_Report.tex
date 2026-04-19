@@ -1,0 +1,544 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}            % Times New Roman (text + math)
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{tocloft}
+
+% ── Compact TOC spacing ──────────────────────────────────────────
+\setlength{\cftbeforesecskip}{2pt}
+\setlength{\cftbeforesubsecskip}{1pt}
+\setlength{\cftbeforesubsubsecskip}{1pt}
+\renewcommand{\cftsecfont}{\normalsize}
+\renewcommand{\cftsubsecfont}{\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalsize}
+\renewcommand{\cftsecpagefont}{\normalsize}
+\renewcommand{\cftsubsecpagefont}{\normalsize}
+\renewcommand{\cftsubsubsecpagefont}{\normalsize}
+
+% ── No headers or footers — page number only ─────────────────────
+\pagestyle{plain}
+
+% ── All body text: 12 pt Times New Roman (set by document class) ─
+
+% ── Colors (used only for hyperlinks and tcolorbox) ──────────────
+\definecolor{primary}{HTML}{1D9E75}
+\definecolor{accent}{HTML}{D85A30}
+\definecolor{secondary}{HTML}{7F77DD}
+\definecolor{lightgray}{HTML}{F2F2F2}
+\definecolor{darkgray}{HTML}{333333}
+
+% ── Hyperref: black links for academic style ─────────────────────
+\hypersetup{
+    colorlinks=false,
+    hidelinks,
+    pdftitle={FlowShift Analysis Report},
+    pdfauthor={Data Science and Algorithms – BIT CS},
+}
+
+% ── Section formatting — academic style, all black ───────────────
+\titleformat{\section}
+  {\fontsize{12}{14}\selectfont\bfseries}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\fontsize{12}{14}\selectfont\bfseries}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\fontsize{12}{14}\selectfont\bfseries\itshape}
+  {\thesubsubsection}{1em}{}
+
+% ── Caption font ─────────────────────────────────────────────────
+\captionsetup{font=normalsize, labelfont=bf}
+
+% ── Callout box ──────────────────────────────────────────────────
+\tcbset{
+    finding/.style={
+        colback=lightgray,
+        colframe=darkgray,
+        fonttitle=\bfseries,
+        title=Key Finding,
+        left=6pt, right=6pt, top=4pt, bottom=4pt,
+        fontupper=\normalsize
+    },
+    highlight/.style={
+        colback=lightgray,
+        colframe=darkgray,
+        left=6pt, right=6pt, top=4pt, bottom=4pt,
+        boxrule=0.5pt,
+        fontupper=\normalsize
+    }
+}
+
+% ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title Page ───────────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{3cm}
+
+    {\fontsize{14}{18}\selectfont\bfseries
+    FlowShift: Analyzing How Urban Traffic Congestion\\[8pt]
+    Influences Public Transport Demand in Los Angeles\par}
+
+    \vspace{1.2cm}
+
+    {\normalsize Data Science and Algorithms --- BIT Computer Science\par}
+
+    \vspace{0.5cm}
+
+    {\normalsize \today\par}
+
+    \vspace{2cm}
+
+    \begin{tcolorbox}[highlight, width=12cm]
+        \centering
+        \textbf{Research Question}\\[6pt]
+        \textit{Do people switch to public transport when roads get congested --- and by how much?}
+    \end{tcolorbox}
+
+    \vspace{1.5cm}
+
+    \begin{tabular}{rl}
+        \textbf{Dataset:}   & Large-ST (\texttt{ca\_his\_raw\_2021.h5}) + NTD Ridership \\[6pt]
+        \textbf{Course:}    & Data Science and Algorithms \\[6pt]
+        \textbf{Program:}   & BIT Computer Science \\[6pt]
+        \textbf{Coverage:}  & Full year 2021 \\[6pt]
+        \textbf{Scope:}     & California freeway network; Los Angeles transit \\
+    \end{tabular}
+
+\end{titlepage}
+
+% ── Table of Contents — compacted to fit one page ────────────────
+{
+  \setlength{\parskip}{0pt}
+  \setlength{\baselineskip}{0pt}
+  \tableofcontents
+}
+\newpage
+
+% ─────────────────────────────────────────────────────────────────
+\section{Introduction}
+
+Urban traffic congestion imposes significant social and economic costs. When roads become saturated, commuters face a choice: endure the gridlock or switch to public transit. Understanding whether — and how strongly — this modal shift occurs has direct implications for transportation planning, infrastructure investment, and sustainability policy.
+
+This report presents \textbf{FlowShift}, a comprehensive data science analysis that merges California freeway sensor data (PeMS, Large-ST dataset) with National Transit Database (NTD) monthly ridership records to quantify the relationship between road congestion and public transit demand in the Los Angeles metropolitan area across the full calendar year 2021.
+
+The analysis proceeds through five stages: (1) data loading and preprocessing, (2) exploratory data analysis, (3) statistical hypothesis testing, (4) predictive modelling, and (5) time series forecasting. The study uses a wide palette of methods — from Pearson correlation and Welch $t$-tests to Random Forest, LSTM, ARIMA, and K-Means clustering — to build a multi-faceted picture of the congestion–ridership nexus.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Data}
+
+\subsection{Traffic Flow Data — Large-ST}
+
+The primary dataset is sourced from the \textbf{California Performance Measurement System (PeMS)} and distributed as the Large-ST benchmark (\texttt{ca\_his\_raw\_2021.h5}). It records vehicle flow counts at 5-minute intervals across 8,600 freeway sensors distributed across nine PeMS districts in California.
+
+\begin{table}[H]
+\centering
+\caption{Traffic flow dataset summary}
+\begin{tabular}{lc}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Total sensors             & 8,600 \\
+Temporal resolution       & 5-minute intervals \\
+Timestamps (rows)         & 105,120 \\
+Date range                & 1 Jan 2021 — 31 Dec 2021 \\
+Total data cells          & 904,032,000 \\
+PeMS districts covered    & 3, 4, 5, 6, 7, 8, 10, 11, 12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Accompanying sensor metadata (\texttt{ca\_meta.csv}) provides geographic coordinates (latitude, longitude), freeway assignment, number of lanes, sensor type, and district for all 8,600 sensors, enabling spatial analysis.
+
+\subsection{Transit Ridership Data — NTD}
+
+Monthly ridership figures are sourced from the \textbf{National Transit Database (NTD)} and filtered to the Los Angeles Urbanized Zone (UZA). The dataset covers 20 transit agencies and eight service modes — Heavy Rail (HR), Light Rail (LR), Bus (MB), Commuter Rail (CR), Demand Response (DR), Commuter Bus (CB), Rapid Bus (RB), and Vanpool (VP).
+
+\begin{table}[H]
+\centering
+\caption{Key NTD ridership fields}
+\begin{tabular}{ll}
+\toprule
+\textbf{Field} & \textbf{Description} \\
+\midrule
+UPT  & Unlinked Passenger Trips — total boardings per month \\
+VOMS & Vehicles Operating in Maximum Service \\
+VRH  & Vehicle Revenue Hours \\
+VRM  & Vehicle Revenue Miles \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total annual LA ridership (2021):} 310,753,364 UPT across all modes and agencies.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Data Preprocessing}
+
+\subsection{Missing Data}
+
+Raw flow data contained \textbf{8,455,475 missing values} out of 904 million cells (0.94\%). The spatial distribution of missingness was highly skewed: a small minority of sensors accounted for most gaps.
+
+\begin{table}[H]
+\centering
+\caption{Sensor quality filtering}
+\begin{tabular}{lc}
+\toprule
+\textbf{Criterion} & \textbf{Count} \\
+\midrule
+Sensors $>50\%$ missing  & 76  \\
+Sensors $>20\%$ missing  & 91  \\
+Sensors retained ($\leq 20\%$) & 8,509 \\
+Sensors dropped          & 91  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Remaining gaps were resolved using \textbf{forward-fill followed by backward-fill} (temporal imputation). After filling, zero missing values remained.
+
+\subsection{Outlier Detection and Removal}
+
+Flow readings beyond $\pm 3\sigma$ of each sensor's annual distribution were flagged as outliers. A total of \textbf{920,684 outliers (0.10\%)} were identified and replaced with NaN, then re-imputed using the same fill strategy.
+
+\subsection{Feature Engineering}
+
+The following features were derived from the cleaned flow matrix for downstream modelling:
+
+\begin{itemize}[itemsep=2pt]
+    \item \textbf{Temporal features:} hour of day, day of week (0–6), month (1–12)
+    \item \textbf{Binary flags:} \texttt{is\_weekend}, \texttt{is\_peak} (hours 7–9, 17–19)
+    \item \textbf{Season:} winter, spring, summer, fall (mapped from month)
+    \item \textbf{Congestion flag:} \texttt{is\_congested} = 1 if total flow $\geq$ 75th percentile (\num{2765279} vehicles/5 min)
+    \item \textbf{Lag features:} \texttt{flow\_lag1} (5 min), \texttt{flow\_lag12} (1 h), \texttt{flow\_lag288} (1 day)
+\end{itemize}
+
+The 75th-percentile congestion threshold yields a \textbf{25\% congestion rate} across all timestamps, consistent with the theoretical expectation from a quartile-based definition.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Exploratory Data Analysis}
+
+\subsection{Traffic Flow Patterns}
+
+\subsubsection{Overall Flow Distribution}
+
+The aggregated total flow (sum across all sensors at each 5-minute interval) ranges from \num{297048} to \num{3171719} vehicles, with a mean of approximately \num{1938436} and a pronounced right skew reflecting peak-hour surges. The distribution exhibits a bimodal shape, with a low-flow cluster (overnight/early morning) and a high-flow cluster (daytime hours).
+
+\subsubsection{Hourly Patterns — Weekday vs.\ Weekend}
+
+Traffic follows markedly different diurnal profiles on weekdays and weekends:
+
+\begin{itemize}
+    \item \textbf{Weekday:} twin peaks at 08:00 (AM commute) and 17:00–18:00 (PM commute), with the PM peak exceeding the congestion threshold.
+    \item \textbf{Weekend:} a single, broader midday peak (10:00–15:00) that remains below the congestion threshold throughout.
+\end{itemize}
+
+The weekday mean flow (\num{1988090}) is \textbf{9.6\% higher} than the weekend mean (\num{1814300}), a difference confirmed to be highly significant (see Section~\ref{sec:stats}).
+
+\subsubsection{Temporal Heatmap}
+
+A pivot-table heatmap of average flow by day-of-week (rows) and hour-of-day (columns) reveals:
+\begin{itemize}
+    \item Friday PM peak is the most congested single period of the week.
+    \item Saturday and Sunday show uniformly lower flow, especially before 08:00 and after 21:00.
+    \item January and February show lower overall congestion rates ($\sim$10.5\% and 19.0\%) than the summer/autumn period.
+\end{itemize}
+
+\subsubsection{Seasonal Trends}
+
+Monthly aggregation of average flow and congestion rate reveals a \textbf{consistent upward trend through 2021}, with congestion rates rising from 10.5\% in January to a peak of ~29.6\% in June, then partially retreating to ~21.9\% in December. This trajectory likely reflects the progressive return to pre-pandemic activity levels during 2021.
+
+\subsection{Ridership Trends}
+
+LA public transit ridership exhibited strong growth throughout 2021, climbing from \num{18722623} UPT in January to a peak of \num{31466621} UPT in October — a \textbf{68\% increase} over the year. This mirrors the pandemic recovery arc and correlates directionally with the increasing congestion trend.
+
+\textbf{Mode-level observations:}
+\begin{itemize}
+    \item Bus (MB) accounts for the largest share of ridership across all months.
+    \item Heavy Rail (HR) and Light Rail (LR) together represent the second-largest block.
+    \item Demand Response (DR) and Vanpool (VP) remain the smallest modes.
+\end{itemize}
+
+\subsection{Sensor Geography and Clustering}
+
+Sensors distributed across California's freeway network were visualized on interactive Folium maps. A traffic flow heatmap confirms that the highest flow densities are concentrated in the Los Angeles Basin (District 7), the San Francisco Bay Area (Districts 4 and 12), and Interstate 5 corridor.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Statistical Analysis}
+\label{sec:stats}
+
+\subsection{Correlation: Traffic Flow vs.\ Ridership}
+
+Monthly-level Pearson and Spearman correlations were computed between traffic flow metrics and total LA transit ridership:
+
+\begin{table}[H]
+\centering
+\caption{Correlation results — traffic metrics vs.\ transit ridership ($n=12$ months)}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Variable pair} & \textbf{Pearson $r$} & \textbf{$p$-value} & \textbf{Spearman $r_s$} & \textbf{$p$-value} \\
+\midrule
+Avg Flow vs.\ Ridership        & 0.7318 & 0.0068 & 0.5944 & 0.0415 \\
+Congestion \% vs.\ Ridership   & 0.7077 & 0.0100 & 0.5594 & 0.0586 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Both Pearson correlations are statistically significant at $\alpha = 0.01$. The positive direction confirms that months with higher traffic flow also tend to have higher transit ridership — consistent with a shared underlying driver (economic activity / commuting demand) rather than a simple substitution effect.
+
+An OLS regression of ridership on congestion rate and average flow jointly achieves $R^2 = 0.5793$, explaining approximately 58\% of monthly ridership variance.
+
+\begin{tcolorbox}[finding]
+Months with higher traffic congestion are associated with \textbf{higher} — not lower — transit ridership ($r = 0.71$, $p < 0.01$). Both metrics rise together through 2021, driven by pandemic recovery rather than a direct modal-shift response to congestion alone.
+\end{tcolorbox}
+
+\subsection{Hypothesis Tests}
+
+\subsubsection{Weekday vs.\ Weekend Flow}
+
+A Welch two-sample $t$-test compares weekday and weekend total flow:
+
+\[
+H_0: \mu_{\text{weekday}} = \mu_{\text{weekend}}, \quad H_1: \mu_{\text{weekday}} \neq \mu_{\text{weekend}}
+\]
+
+\[
+t = 27.50, \quad p = 2.06 \times 10^{-165}
+\]
+
+\textbf{Result:} Highly significant ($\alpha = 0.05$). Weekday mean flow (\num{1988090}) exceeds weekend mean (\num{1814300}) by \textasciitilde 9.6\%.
+
+\subsubsection{Peak vs.\ Off-Peak Flow}
+
+\[
+t = 166.97, \quad p \approx 0
+\]
+
+Peak hours (07:00–09:00, 17:00–19:00) show a mean flow of \num{2489320} versus \num{1754808} during off-peak hours — a \textbf{41.9\% higher} peak flow — an enormous and statistically overwhelming difference.
+
+\subsubsection{Autocorrelation}
+
+\begin{itemize}
+    \item Lag-1 (5 min) correlation with current flow: $r = 0.999$ — the flow series is highly persistent at short intervals.
+    \item Lag-288 (1 day) correlation: $r = 0.946$ — strong daily periodicity.
+    \item ADF stationarity test: statistic $= -41.70$, $p \approx 0$ — the series is stationary.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────
+\section{Predictive Modelling}
+
+Two modelling tasks were pursued: (A) \textbf{regression} — forecasting total flow from time-based and lag features, and (B) \textbf{classification} — predicting whether a given 5-minute window is congested.
+
+\subsection{Feature Groups}
+
+\begin{itemize}
+    \item \textbf{Group A (with lag):} hour, day\_of\_week, is\_weekend, is\_peak, season\_enc, flow\_lag1, flow\_lag12, flow\_lag288
+    \item \textbf{Group B (no lag):} hour, day\_of\_week, is\_weekend, is\_peak, season\_enc, month
+\end{itemize}
+
+Group B represents a \emph{true prediction} scenario where only calendar information is available. Group A is an autocorrelation baseline that shows the ceiling of achievable accuracy.
+
+A time-based 80/20 split was used (no shuffling), preserving temporal order: 83,865 training and 20,967 test samples.
+
+\subsection{Regression Results}
+
+\begin{table}[H]
+\centering
+\caption{Regression model comparison (on held-out test set)}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} \\
+\midrule
+Linear Regression (no lag)       & 716,450  & 803,409  & 0.2313 \\
+Random Forest (no lag)           & 123,187  & 195,205  & 0.9546 \\
+Linear Regression (with lag)     & 21,881   & 31,021   & 0.9989 \\
+\textbf{Random Forest (with lag)}& \textbf{15,923} & \textbf{25,265} & \textbf{0.9992} \\
+ARIMA(2,1,2) rolling             & 19,851   & 40,844   & — \\
+LSTM (with lag)                  & 48,443   & 62,466   & 0.9954 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+\begin{itemize}
+    \item Lag features are transformative: Random Forest without lag achieves $R^2 = 0.9546$; adding lags pushes it to $R^2 = 0.9992$.
+    \item Linear regression without lag ($R^2 = 0.2313$) confirms that the relationship between calendar features and flow is highly non-linear.
+    \item ARIMA(2,1,2) achieves competitive accuracy (MAE \num{19851}) with a rolling 1-step forecast evaluated over one day.
+    \item LSTM (30 epochs, 2 layers, hidden size 64, trained on CUDA GPU) achieves $R^2 = 0.9954$ — strong performance, though slightly behind the Random Forest due to the shorter input window (12 steps = 1 hour).
+\end{itemize}
+
+\subsection{Classification Results}
+
+Three classifiers were trained to predict \texttt{is\_congested} (binary), using only Group B (no-lag) features:
+
+\begin{table}[H]
+\centering
+\caption{Classification model comparison — congestion detection (without lag features)}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Decision Tree (depth=8) & 0.908 & 0.763 & 0.915 & 0.832 & 0.959 \\
+KNN ($k=5$)             & 0.890 & 0.730 & 0.860 & 0.790 & 0.922 \\
+Random Forest           & \textit{(best)} & — & — & — & 0.956 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three models demonstrate strong discriminative power (AUC $> 0.92$) using only hour-of-day, day-of-week, and seasonal features — confirming that congestion is highly predictable from calendar patterns alone. The Decision Tree achieves the highest AUC (0.959) and recall (0.915), making it the most effective classifier for catching congested periods.
+
+\subsection{K-Means Sensor Clustering}
+
+Sensors were clustered by their normalized 24-hour flow profiles. The elbow and silhouette methods both identified $k=2$ as the optimal number of clusters:
+
+\begin{itemize}
+    \item \textbf{Cluster 0:} Lower absolute flow across the day; typical of lower-traffic routes or peripheral freeways.
+    \item \textbf{Cluster 1:} Significantly higher peak-hour flow; characteristic of major urban corridors (I-5, I-405, SR-101).
+\end{itemize}
+
+Spatial mapping confirmed that Cluster 1 sensors are concentrated in the Los Angeles Basin and San Francisco Bay Area, aligning with known high-congestion corridors.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Time Series Analysis}
+
+\subsection{Stationarity}
+
+The total flow time series is \textbf{stationary} (ADF statistic $= -41.70$, $p \approx 0$), meaning no differencing is strictly required. Nevertheless, first-differencing was applied for ACF/PACF analysis to isolate lag structure.
+
+\subsection{ACF and PACF}
+
+Analysis of the differenced series reveals significant autocorrelation at lags 1 and 2, and significant partial autocorrelation at lags 1 and 2, suggesting an ARIMA$(2,1,2)$ specification.
+
+\subsection{ARIMA Forecast}
+
+An ARIMA$(2,1,2)$ model was fitted on a 2-day (576 steps) training window and evaluated via a \textbf{rolling 1-step-ahead forecast} over a 1-day (288 steps) test window:
+
+\begin{itemize}
+    \item AIC: 13,531.7 \quad BIC: 13,553.4
+    \item MAE: \num{19851} vehicles \quad RMSE: \num{40844} vehicles
+\end{itemize}
+
+The rolling forecast closely tracks the actual diurnal cycle, with forecast error amplifying slightly around sharp transitions (midnight dip, morning ramp-up).
+
+\subsection{LSTM Neural Network}
+
+A 2-layer LSTM (hidden size 64, dropout 0.2) was trained on 30 epochs with batch size 512 and Adam optimizer ($\text{lr}=0.001$) on an NVIDIA RTX 4070 Laptop GPU. Input sequences of 12 steps (1 hour) were used.
+
+\begin{table}[H]
+\centering
+\caption{LSTM training convergence}
+\begin{tabular}{cc}
+\toprule
+\textbf{Epoch} & \textbf{MSE Loss} \\
+\midrule
+5  & 0.00105 \\
+10 & 0.00076 \\
+15 & 0.00073 \\
+20 & 0.00063 \\
+25 & 0.00051 \\
+30 & 0.00048 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Test performance: MAE = \num{48443}, RMSE = \num{62466}, $R^2 = 0.9954$. The LSTM underperforms the Random Forest in MAE/RMSE terms, largely because the Random Forest can exploit the full daily lag (288 steps) while the LSTM operates on a 12-step window.
+
+% ─────────────────────────────────────────────────────────────────
+\section{Discussion}
+
+\subsection{Congestion–Ridership Relationship}
+
+The central research question — \emph{do people switch to public transport when roads are congested?} — yields a nuanced answer. The Pearson correlation ($r = 0.73$) and OLS $R^2 = 0.58$ indicate a \textbf{moderate positive relationship}: higher congestion months correspond to higher ridership months. However, this correlation is driven primarily by \textbf{shared temporal trends} (pandemic recovery throughout 2021) rather than a clean modal-shift response.
+
+At the 5-minute resolution, the congestion flag is dominated by time-of-day and day-of-week effects, and the classification models confirm that these calendar features alone predict congestion with AUC $> 0.95$. This suggests that while congestion does correlate with ridership, the causal mechanism is more complex than a simple "congestion drives riders to transit" story.
+
+\subsection{Model Performance}
+
+Random Forest with lag features is the strongest regression model, achieving $R^2 = 0.9992$ — essentially a near-perfect fit. This is expected given the extremely high autocorrelation ($r_{\text{lag-1}} = 0.999$) of the flow series; lag features provide almost all the predictive power. The more practically relevant metric is the \emph{no-lag} performance ($R^2 = 0.9546$), which represents true predictive ability from calendar information.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Temporal mismatch:} Flow data is at 5-minute resolution; ridership is monthly. The correlation analysis is limited to 12 data points.
+    \item \textbf{Spatial mismatch:} PeMS sensors cover California freeways; ridership covers LA transit. No sensor-to-stop spatial join was performed.
+    \item \textbf{Confounding:} Both series trend upward in 2021 due to pandemic recovery, inflating the measured correlation.
+    \item \textbf{LSTM window:} The 12-step (1-hour) input window limits the model's ability to capture daily periodicity compared to the lag-equipped Random Forest.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────
+\section{Conclusions}
+
+This study demonstrates that urban traffic congestion and public transit ridership in Los Angeles are \textbf{positively correlated} at the monthly level ($r = 0.73$, $p < 0.01$), with both metrics driven upward by the 2021 pandemic recovery. Peak-hour and weekday flows significantly exceed off-peak and weekend flows ($p \ll 0.001$), and these temporal patterns are sufficient to predict congestion with high accuracy (AUC $> 0.95$).
+
+The best-performing flow prediction model is \textbf{Random Forest with lag features} ($R^2 = 0.9992$), exploiting the near-perfect short-term autocorrelation of freeway sensor data. Without lag features — the operationally relevant scenario — Random Forest still achieves $R^2 = 0.9546$, confirming strong predictability from time-of-day and seasonal patterns alone.
+
+K-Means clustering reveals two archetypal sensor profiles corresponding to high-congestion urban corridors (LA Basin, Bay Area) and lower-volume peripheral routes.
+
+Future work should incorporate a finer-grained ridership dataset (hourly or daily), spatially match freeway sensors to nearby transit stops, and apply causal inference methods to disentangle the pandemic recovery trend from any true congestion-driven modal shift.
+
+% ─────────────────────────────────────────────────────────────────
+\appendix
+\section{Model Performance Summary}
+
+\begin{table}[H]
+\centering
+\caption{Complete regression and time-series results}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} \\
+\midrule
+Linear Regression (no lag)       & 716,449.6 & 803,408.9 & 0.2313 \\
+Random Forest (no lag)           & 123,186.6 & 195,205.0 & 0.9546 \\
+Linear Regression (with lag)     & 21,880.9  & 31,021.0  & 0.9989 \\
+Random Forest (with lag)         & 15,922.5  & 25,264.5  & 0.9992 \\
+ARIMA(2,1,2) rolling             & 19,851.1  & 40,844.2  & N/A    \\
+LSTM (with lag, 30 epochs)       & 48,442.5  & 62,465.7  & 0.9954 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Classification results — congestion detection (without lag)}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Decision Tree (depth=8) & 0.908 & 0.763 & 0.915 & 0.832 & 0.959 \\
+KNN ($k=5$)             & 0.890 & 0.730 & 0.860 & 0.790 & 0.922 \\
+Random Forest           & —     & —     & —     & —     & 0.956 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Data Sources}
+
+\begin{itemize}
+    \item \textbf{Large-ST:} \url{https://github.com/liuxu77/LargeST} — California historical traffic flow, 2021.
+    \item \textbf{NTD Monthly Data:} \url{https://www.transit.dot.gov/ntd} — National Transit Database, FY2021.
+    \item \textbf{PeMS:} \url{https://pems.dot.ca.gov/} — California Dept.\ of Transportation sensor metadata.
+\end{itemize}
+
+\end{document}
