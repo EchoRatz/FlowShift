@@ -1,2 +1,2 @@
 # FlowShift
-Analyzing how urban traffic congestion influences public transport demand in Los Angeles using Large-ST and LA Metro ridership data.
+Analyzing Urban Traffic Congestion and how it Influences Public Transport Demand in Los Angeles
