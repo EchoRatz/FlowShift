@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c577bf2d-5427-4fa1-848e-3ffc72dfa0a9" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RidershipData.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/map1_sensor_locations.html" beforeDir="false" afterPath="$PROJECT_DIR$/figures/map1_sensor_locations.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/figures/map3_flow_heatmap.html" beforeDir="false" afterPath="$PROJECT_DIR$/figures/map3_flow_heatmap.html" afterDir="false" />
-    </list>
+    <list default="true" id="c577bf2d-5427-4fa1-848e-3ffc72dfa0a9" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
